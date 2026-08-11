@@ -1,0 +1,51 @@
+import time
+import httpx
+from typing import Any, Dict
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+from src.utils.logger import logger
+
+
+class ApiClient:
+    def __init__(self, base_url: str = "https://gamma-api.polymarket.com/"):
+        self.base_url = base_url.rstrip("/") + "/"
+        self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def close(self):
+        await self._client.aclose()
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.RequestError)),
+        reraise=True
+    )
+    async def _get(self, endpoint: str) -> Dict[str, Any]:
+        logger.debug(f"Fetching {endpoint}")
+        try:
+            start = time.perf_counter()
+            response = await self._client.get(endpoint)
+            elapsed_ms = (time.perf_counter() - start) * 1000
+
+            response.raise_for_status()
+            logger.debug(f"GET {endpoint} -> {response.status_code} in {elapsed_ms:.2f}ms")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error occurred while fetching {endpoint}: {e}")
+            raise
+        except httpx.RequestError as e:
+            logger.error(f"Request error occurred while fetching {endpoint}: {e}")
+            raise
+        
+        return response.json()
+
+    async def get_series_by_id(self, series_id: int) -> Dict[str, Any]:
+        return await self._get(f"series/{series_id}")
+
+    async def get_event_by_id(self, event_id: int) -> Dict[str, Any]:
+        return await self._get(f"events/{event_id}")
