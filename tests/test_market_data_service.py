@@ -70,7 +70,10 @@ async def test_watch_series_updates_subscription():
                 pass
         
         # Verify get_tokens_for_events was called for the new event list
-        md_service.get_tokens_for_events.assert_called_with(["event1", "event2"], True)
+        # (current_event_ids is now a set, so list() order isn't guaranteed)
+        call_args = md_service.get_tokens_for_events.call_args
+        assert set(call_args.args[0]) == {"event1", "event2"}
+        assert call_args.args[1] is True
         # Verify ws_client.subscribe was called
         mock_ws.subscribe.assert_called_with(["token1", "token2"])
 

@@ -85,7 +85,7 @@ class MarketDataService:
             try:
                 series = await self.api_client.get_series_by_id(series_id)
                 current_events = series.get("events", [])
-                current_event_ids = [e["id"] for e in current_events]
+                current_event_ids = {e["id"] for e in current_events}
 
                 if current_event_ids != known_event_ids:
                     new_tokens = await self.get_tokens_for_events(list(current_event_ids), only_moneyline)
