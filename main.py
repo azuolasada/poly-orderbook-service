@@ -1,4 +1,5 @@
 import asyncio
+import signal
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 
@@ -6,12 +7,18 @@ from src.market_data.message_buffer import MessageBuffer
 async def main():
     md_service = MarketDataService()
     series_id = 10365 # ATP tennis
-    
+
     # Initialize message buffer
     buffer = MessageBuffer(flush_interval_seconds=300, flush_count_threshold=10_000)
-    
+
     # Start periodic flush task
     flush_task = asyncio.create_task(buffer.start_periodic_flush())
+
+    # Handle SIGTERM (docker stop) and SIGINT (Ctrl+C)
+    main_task = asyncio.current_task()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, main_task.cancel)
 
     try:
         ws_client = await md_service.subscribe_to_series(series_id=series_id)
