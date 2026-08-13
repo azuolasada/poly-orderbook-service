@@ -1,9 +1,17 @@
 import time
 import httpx
 from typing import Any, Dict
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 from src.utils.logger import logger
+
+
+def _is_retryable(exception: BaseException) -> bool:
+    """Retry on connection-level errors, 5xx responses, and 429 (rate limited); not other 4xx client errors."""
+    if isinstance(exception, httpx.HTTPStatusError):
+        status_code = exception.response.status_code
+        return status_code >= 500 or status_code == 429
+    return isinstance(exception, httpx.RequestError)
 
 
 class ApiClient:
@@ -23,7 +31,7 @@ class ApiClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.RequestError)),
+        retry=retry_if_exception(_is_retryable),
         reraise=True
     )
     async def _get(self, endpoint: str) -> Dict[str, Any]:
