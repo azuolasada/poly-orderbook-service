@@ -11,6 +11,7 @@ class WebSocketClient:
         self.url = url
         self.connection: ClientConnection | None = None
         self._subscribed_assets: list[str] = []
+        self._connection_lock = asyncio.Lock()
 
     @retry(
         stop=stop_after_attempt(10),
@@ -18,22 +19,31 @@ class WebSocketClient:
         retry=retry_if_exception_type((WebSocketException, ConnectionRefusedError, OSError)),
         reraise=True
     )
-    async def connect(self):
+    async def _connect_locked(self):
         logger.info(f"Connecting to WebSocket at {self.url}")
         self.connection = await connect(self.url, ping_interval=20)
         logger.info("Successfully connected to WebSocket")
         return self.connection
 
+    async def connect(self):
+        async with self._connection_lock:
+            return await self._connect_locked()
+
     async def disconnect(self):
-        if self.connection:
-            logger.info("Disconnecting from WebSocket")
-            await self.connection.close()
-            self.connection = None
+        async with self._connection_lock:
+            if self.connection:
+                logger.info("Disconnecting from WebSocket")
+                await self.connection.close()
+                self.connection = None
 
     async def subscribe(self, asset_ids: list[str]):
+        async with self._connection_lock:
+            await self._subscribe_locked(asset_ids)
+
+    async def _subscribe_locked(self, asset_ids: list[str]):
         if not self.connection:
             raise RuntimeError("WebSocket is not connected. Call connect() first.")
-        
+
         logger.info(f"Subscribing to assets: {asset_ids}")
         self._subscribed_assets = asset_ids
         subscription_msg = {
@@ -46,9 +56,11 @@ class WebSocketClient:
         while True:
             if not self.connection:
                 logger.warning("WebSocket connection is missing. Attempting to connect...")
-                await self.connect()
-                if self._subscribed_assets:
-                    await self.subscribe(self._subscribed_assets)
+                async with self._connection_lock:
+                    if not self.connection:
+                        await self._connect_locked()
+                        if self._subscribed_assets:
+                            await self._subscribe_locked(self._subscribed_assets)
 
             try:
                 async for message in self.connection:
@@ -59,11 +71,13 @@ class WebSocketClient:
                         logger.error(f"Failed to decode WebSocket message: {e}")
             except (ConnectionClosed, WebSocketException) as e:
                 logger.warning(f"WebSocket connection closed/error: {e}. Reconnecting...")
-                self.connection = None
+                async with self._connection_lock:
+                    self.connection = None
                 await asyncio.sleep(1)  # Brief pause before reconnecting
             except Exception as e:
                 logger.error(f"Unexpected error in WebSocket listen loop: {e}")
-                self.connection = None
+                async with self._connection_lock:
+                    self.connection = None
                 raise
 
     async def __aenter__(self):
