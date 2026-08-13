@@ -18,6 +18,7 @@ async def main():
     except ValueError as e:
         print(f"Error: {e}")
         flush_task.cancel()
+        await asyncio.gather(flush_task, return_exceptions=True)
         return
 
     # Start watcher for series updates
@@ -39,8 +40,10 @@ async def main():
     finally:
         print("Shutting down... flushing remaining messages.")
         watcher_task.cancel()
+        await asyncio.gather(watcher_task, return_exceptions=True)
         await buffer.flush()
         flush_task.cancel()
+        await asyncio.gather(flush_task, return_exceptions=True)
         await ws_client.disconnect()
 
 if __name__ == "__main__":
