@@ -1,8 +1,9 @@
-import pytest
 import asyncio
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 import zstandard as zstd
-from unittest.mock import MagicMock, patch
 from botocore.exceptions import ClientError
 
 from src.market_data.message_buffer import MessageBuffer
@@ -17,7 +18,6 @@ def mock_s3():
         instance.ensure_bucket_exists = MagicMock()
         yield instance
 
-from unittest.mock import AsyncMock
 
 @pytest.mark.asyncio
 async def test_buffer_count_threshold(mock_s3):

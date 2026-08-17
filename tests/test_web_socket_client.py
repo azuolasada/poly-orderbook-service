@@ -1,10 +1,12 @@
 import asyncio
-import pytest
 import json
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from websockets.exceptions import ConnectionClosed
 
 from src.market_data.web_socket_client import WebSocketClient
+
 
 @pytest.mark.asyncio
 async def test_ws_connect_disconnect():

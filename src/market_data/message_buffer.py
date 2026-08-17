@@ -1,11 +1,12 @@
-import json
 import asyncio
+import json
 from datetime import datetime
 from typing import Any
+
 import zstandard as zstd
 
-from src.utils.logger import logger
 from src.s3_storage import S3Storage
+from src.utils.logger import logger
 
 
 class MessageBuffer:
@@ -15,7 +16,7 @@ class MessageBuffer:
         self.flush_interval_seconds = flush_interval_seconds
         self.flush_count_threshold = flush_count_threshold
         
-        self.buffer = []
+        self.buffer: list[Any] = []
         self.last_flush_time = datetime.now()
         self._lock = asyncio.Lock()
 

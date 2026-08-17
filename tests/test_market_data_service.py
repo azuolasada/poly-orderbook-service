@@ -1,7 +1,10 @@
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from src.market_data.market_data_service import MarketDataService
+
 
 @pytest.mark.asyncio
 async def test_get_series_tokens():
@@ -79,7 +82,9 @@ async def test_watch_series_updates_subscription():
 
 @pytest.mark.asyncio
 async def test_subscribe_to_series():
-    with patch("src.market_data.market_data_service.MarketDataService.get_series_tokens", new_callable=AsyncMock) as mock_get_tokens:
+    with patch(
+        "src.market_data.market_data_service.MarketDataService.get_series_tokens", new_callable=AsyncMock
+    ) as mock_get_tokens:
         with patch("src.market_data.market_data_service.WebSocketClient", autospec=True) as mock_ws_class:
             mock_ws = mock_ws_class.return_value
             mock_ws.connect = AsyncMock()
@@ -97,7 +102,9 @@ async def test_subscribe_to_series():
 
 @pytest.mark.asyncio
 async def test_subscribe_to_series_no_tokens():
-    with patch("src.market_data.market_data_service.MarketDataService.get_series_tokens", new_callable=AsyncMock) as mock_get_tokens:
+    with patch(
+        "src.market_data.market_data_service.MarketDataService.get_series_tokens", new_callable=AsyncMock
+    ) as mock_get_tokens:
         mock_get_tokens.return_value = []
         
         md_service = MarketDataService()

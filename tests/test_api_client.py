@@ -1,6 +1,8 @@
-import pytest
 import httpx
+import pytest
+
 from src.market_data.api_client import ApiClient
+
 
 @pytest.mark.asyncio
 async def test_get_series_by_id(respx_mock):

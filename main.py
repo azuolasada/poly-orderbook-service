@@ -1,5 +1,6 @@
 import asyncio
 import signal
+
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 
@@ -16,6 +17,7 @@ async def main() -> None:
 
     # Handle SIGTERM (docker stop) and SIGINT (Ctrl+C)
     main_task = asyncio.current_task()
+    assert main_task is not None
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, main_task.cancel)

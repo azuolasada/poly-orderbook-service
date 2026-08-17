@@ -1,12 +1,15 @@
-import json
 import asyncio
+import json
+from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, AsyncIterator
-from websockets.asyncio.client import connect, ClientConnection
+from typing import Any
+
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed, WebSocketException
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from src.utils.logger import logger
+
 
 class WebSocketClient:
     def __init__(self, url: str = "wss://ws-subscriptions-clob.polymarket.com/ws/market") -> None:
@@ -64,8 +67,12 @@ class WebSocketClient:
                         if self._subscribed_assets:
                             await self._subscribe_locked(self._subscribed_assets)
 
+            connection = self.connection
+            if connection is None:
+                continue
+
             try:
-                async for message in self.connection:
+                async for message in connection:
                     try:
                         data = json.loads(message)
                         yield data
@@ -82,7 +89,7 @@ class WebSocketClient:
                     self.connection = None
                 raise
 
-    async def __aenter__(self) -> "WebSocketClient":
+    async def __aenter__(self) -> WebSocketClient:
         await self.connect()
         return self
 

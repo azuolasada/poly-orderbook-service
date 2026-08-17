@@ -1,8 +1,9 @@
 import time
-import httpx
 from types import TracebackType
-from typing import Any, Dict
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from typing import Any
+
+import httpx
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from src.utils.logger import logger
 
@@ -20,7 +21,7 @@ class ApiClient:
         self.base_url = base_url.rstrip("/") + "/"
         self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
 
-    async def __aenter__(self) -> "ApiClient":
+    async def __aenter__(self) -> ApiClient:
         return self
 
     async def __aexit__(
@@ -40,7 +41,7 @@ class ApiClient:
         retry=retry_if_exception(_is_retryable),
         reraise=True
     )
-    async def _get(self, endpoint: str) -> Dict[str, Any]:
+    async def _get(self, endpoint: str) -> dict[str, Any]:
         logger.debug(f"Fetching {endpoint}")
         try:
             start = time.perf_counter()
@@ -58,8 +59,8 @@ class ApiClient:
         
         return response.json()
 
-    async def get_series_by_id(self, series_id: int) -> Dict[str, Any]:
+    async def get_series_by_id(self, series_id: int) -> dict[str, Any]:
         return await self._get(f"series/{series_id}")
 
-    async def get_event_by_id(self, event_id: int) -> Dict[str, Any]:
+    async def get_event_by_id(self, event_id: int | str) -> dict[str, Any]:
         return await self._get(f"events/{event_id}")

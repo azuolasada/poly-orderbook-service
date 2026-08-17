@@ -6,6 +6,7 @@ from src.market_data.message_buffer import MessageBuffer
 from src.market_data.web_socket_client import WebSocketClient
 from src.utils.logger import logger
 
+
 class MarketDataService:
     def __init__(self) -> None:
         self.api_client = ApiClient()
@@ -21,7 +22,7 @@ class MarketDataService:
 
         club_tokens = []
         for res in results:
-            if isinstance(res, Exception):
+            if isinstance(res, BaseException):
                 logger.warning(f"Failed to fetch an event: {res}")
                 continue
 
@@ -90,7 +91,10 @@ class MarketDataService:
 
                 if current_event_ids != known_event_ids:
                     new_tokens = await self.get_tokens_for_events(list(current_event_ids), only_moneyline)
-                    logger.info(f"Detected change in events for series {series_id}. New token count: {len(new_tokens)} Updating subscriptions.")
+                    logger.info(
+                        f"Detected change in events for series {series_id}. "
+                        f"New token count: {len(new_tokens)} Updating subscriptions."
+                    )
                     await ws_client.subscribe(new_tokens)
                     
                     if message_buffer:
