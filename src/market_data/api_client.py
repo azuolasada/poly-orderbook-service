@@ -1,5 +1,6 @@
 import time
 import httpx
+from types import TracebackType
 from typing import Any, Dict
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
@@ -15,17 +16,22 @@ def _is_retryable(exception: BaseException) -> bool:
 
 
 class ApiClient:
-    def __init__(self, base_url: str = "https://gamma-api.polymarket.com/"):
+    def __init__(self, base_url: str = "https://gamma-api.polymarket.com/") -> None:
         self.base_url = base_url.rstrip("/") + "/"
         self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "ApiClient":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.close()
 
-    async def close(self):
+    async def close(self) -> None:
         await self._client.aclose()
 
     @retry(

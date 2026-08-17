@@ -1,5 +1,7 @@
 import json
 import asyncio
+from types import TracebackType
+from typing import Any, AsyncIterator
 from websockets.asyncio.client import connect, ClientConnection
 from websockets.exceptions import ConnectionClosed, WebSocketException
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
@@ -7,7 +9,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from src.utils.logger import logger
 
 class WebSocketClient:
-    def __init__(self, url: str = "wss://ws-subscriptions-clob.polymarket.com/ws/market"):
+    def __init__(self, url: str = "wss://ws-subscriptions-clob.polymarket.com/ws/market") -> None:
         self.url = url
         self.connection: ClientConnection | None = None
         self._subscribed_assets: list[str] = []
@@ -19,28 +21,28 @@ class WebSocketClient:
         retry=retry_if_exception_type((WebSocketException, ConnectionRefusedError, OSError)),
         reraise=True
     )
-    async def _connect_locked(self):
+    async def _connect_locked(self) -> ClientConnection:
         logger.info(f"Connecting to WebSocket at {self.url}")
         self.connection = await connect(self.url, ping_interval=20)
         logger.info("Successfully connected to WebSocket")
         return self.connection
 
-    async def connect(self):
+    async def connect(self) -> ClientConnection:
         async with self._connection_lock:
             return await self._connect_locked()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         async with self._connection_lock:
             if self.connection:
                 logger.info("Disconnecting from WebSocket")
                 await self.connection.close()
                 self.connection = None
 
-    async def subscribe(self, asset_ids: list[str]):
+    async def subscribe(self, asset_ids: list[str]) -> None:
         async with self._connection_lock:
             await self._subscribe_locked(asset_ids)
 
-    async def _subscribe_locked(self, asset_ids: list[str]):
+    async def _subscribe_locked(self, asset_ids: list[str]) -> None:
         if not self.connection:
             raise RuntimeError("WebSocket is not connected. Call connect() first.")
 
@@ -52,7 +54,7 @@ class WebSocketClient:
         }
         await self.connection.send(json.dumps(subscription_msg))
 
-    async def listen(self):
+    async def listen(self) -> AsyncIterator[Any]:
         while True:
             if not self.connection:
                 logger.warning("WebSocket connection is missing. Attempting to connect...")
@@ -80,13 +82,18 @@ class WebSocketClient:
                     self.connection = None
                 raise
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "WebSocketClient":
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.disconnect()
 
     @property
-    def subscribed_assets(self):
+    def subscribed_assets(self) -> list[str]:
         return self._subscribed_assets

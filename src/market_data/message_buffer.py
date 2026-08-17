@@ -9,9 +9,9 @@ from src.s3_storage import S3Storage
 
 
 class MessageBuffer:
-    def __init__(self, 
+    def __init__(self,
                  flush_interval_seconds: int = 60,
-                 flush_count_threshold: int = 100):
+                 flush_count_threshold: int = 100) -> None:
         self.flush_interval_seconds = flush_interval_seconds
         self.flush_count_threshold = flush_count_threshold
         
@@ -24,7 +24,7 @@ class MessageBuffer:
 
         self._compressor = zstd.ZstdCompressor(level=3)
 
-    async def add_message(self, message: Any):
+    async def add_message(self, message: Any) -> None:
         """Adds a message to the buffer and checks if flush is needed."""
         async with self._lock:
             self.buffer.append(message)
@@ -38,13 +38,13 @@ class MessageBuffer:
                 logger.info(f"Buffer time threshold reached ({time_since_last_flush:.2f}s). Flushing...")
                 await self._flush_internal()
 
-    async def flush(self):
+    async def flush(self) -> None:
         """Public method to manually trigger a flush."""
         async with self._lock:
             if self.buffer:
                 await self._flush_internal()
 
-    async def _flush_internal(self):
+    async def _flush_internal(self) -> None:
         """Internal flush logic, assumes lock is held."""
         if not self.buffer:
             return
@@ -64,7 +64,7 @@ class MessageBuffer:
         except Exception as e:
             logger.error(f"Failed to flush messages: {e}")
 
-    async def start_periodic_flush(self):
+    async def start_periodic_flush(self) -> None:
         """Background task to ensure periodic flushing even if no messages are arriving."""
         while True:
             await asyncio.sleep(self.flush_interval_seconds)

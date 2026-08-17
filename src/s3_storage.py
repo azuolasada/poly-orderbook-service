@@ -18,7 +18,7 @@ class S3Storage:
         client (boto3.client): The boto3 S3 client.
     """
 
-    def __init__(self, bucket: str | None = None):
+    def __init__(self, bucket: str | None = None) -> None:
         """
         Initializes the S3Storage with a bucket name and S3 client.
 

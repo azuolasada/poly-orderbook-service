@@ -2,11 +2,12 @@ import asyncio
 import json
 
 from src.market_data.api_client import ApiClient
+from src.market_data.message_buffer import MessageBuffer
 from src.market_data.web_socket_client import WebSocketClient
 from src.utils.logger import logger
 
 class MarketDataService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_client = ApiClient()
         logger.info("Initializing MarketDataService")
 
@@ -41,7 +42,7 @@ class MarketDataService:
 
     async def get_series_tokens(self,
                                series_id: int,
-                               only_moneyline: bool = True):
+                               only_moneyline: bool = True) -> list[str]:
         series = await self.api_client.get_series_by_id(series_id=series_id)
         event_ids = [e["id"] for e in series.get("events", [])]
         return await self.get_tokens_for_events(event_ids, only_moneyline)
@@ -60,12 +61,12 @@ class MarketDataService:
         await ws_client.subscribe(tokens)
         return ws_client
 
-    async def watch_series(self, 
-                           series_id: int, 
-                           ws_client: WebSocketClient, 
-                           message_buffer=None,
+    async def watch_series(self,
+                           series_id: int,
+                           ws_client: WebSocketClient,
+                           message_buffer: MessageBuffer | None = None,
                            interval_seconds: int = 300,
-                           only_moneyline: bool = True):
+                           only_moneyline: bool = True) -> None:
         """
         Background task to monitor changes in events for a series and update subscriptions.
         """

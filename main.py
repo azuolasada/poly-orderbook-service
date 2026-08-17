@@ -4,7 +4,7 @@ from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 
 
-async def main():
+async def main() -> None:
     md_service = MarketDataService()
     series_id = 10365 # ATP tennis
 
