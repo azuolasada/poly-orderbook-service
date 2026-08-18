@@ -28,7 +28,7 @@ jobs:
 
       - name: Test (pytest)
         env:
-          POLYMARKET_SERIES_ID: test-series
+          POLYMARKET_SERIES_ID: 123
           S3_ENDPOINT_URL: http://localhost:9000
           S3_ACCESS_KEY_ID: test
           S3_SECRET_ACCESS_KEY: test
