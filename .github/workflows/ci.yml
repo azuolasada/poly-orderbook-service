@@ -27,4 +27,10 @@ jobs:
         run: uv run mypy src main.py
 
       - name: Test (pytest)
+        env:
+          POLYMARKET_SERIES_ID: test-series
+          S3_ENDPOINT_URL: http://localhost:9000
+          S3_ACCESS_KEY_ID: test
+          S3_SECRET_ACCESS_KEY: test
+          S3_BUCKET: test-bucket
         run: uv run pytest tests/ -q
