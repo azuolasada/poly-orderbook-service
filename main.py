@@ -1,13 +1,14 @@
 import asyncio
 import signal
 
+from src.config import settings
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 
 
 async def main() -> None:
     md_service = MarketDataService()
-    series_id = 10365 # ATP tennis
+    series_id = settings.POLYMARKET_SERIES_ID
 
     # Initialize message buffer
     buffer = MessageBuffer(flush_interval_seconds=300, flush_count_threshold=10_000)

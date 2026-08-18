@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from src.config import APP_ENV
+from src.config import settings
 
 
 def setup_logger(name: str = "poly_orderbook",
@@ -44,5 +44,5 @@ def setup_logger(name: str = "poly_orderbook",
     return logger
 
 # Create a default logger instance for the project
-log_level = logging.DEBUG if APP_ENV == "dev" else logging.INFO
+log_level = logging.DEBUG if settings.APP_ENV == "dev" else logging.INFO
 logger = setup_logger(level=log_level)
