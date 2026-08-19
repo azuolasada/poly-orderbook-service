@@ -1,3 +1,5 @@
+"""Module for resolving Polymarket series/events to CLOB tokens and orchestrating subscriptions."""
+
 import asyncio
 import json
 
@@ -8,12 +10,29 @@ from src.utils.logger import logger
 
 
 class MarketDataService:
+    """
+    Orchestrates resolving a Polymarket series to CLOB tokens and streaming its market data.
+
+    Attributes:
+        api_client (ApiClient): The Gamma API client used to resolve series/events/markets.
+    """
+
     def __init__(self) -> None:
+        """Initializes the MarketDataService with a new ApiClient."""
         self.api_client = ApiClient()
         logger.info("Initializing MarketDataService")
 
     async def get_tokens_for_events(self, event_ids: list[str], only_moneyline: bool = True) -> list[str]:
-        """Fetches tokens for a list of event IDs."""
+        """
+        Fetches CLOB token IDs for a list of event IDs.
+
+        Args:
+            event_ids (list[str]): The event IDs to fetch tokens for.
+            only_moneyline (bool, optional): If True, only include moneyline markets.
+
+        Returns:
+            list[str]: The CLOB token IDs found across the events' markets.
+        """
         if not event_ids:
             return []
 
@@ -44,13 +63,33 @@ class MarketDataService:
     async def get_series_tokens(self,
                                series_id: int,
                                only_moneyline: bool = True) -> list[str]:
+        """
+        Fetches CLOB token IDs for all events belonging to a series.
+
+        Args:
+            series_id (int): The Polymarket series ID.
+            only_moneyline (bool, optional): If True, only include moneyline markets.
+
+        Returns:
+            list[str]: The CLOB token IDs found across the series' events.
+        """
         series = await self.api_client.get_series_by_id(series_id=series_id)
         event_ids = [e["id"] for e in series.get("events", [])]
         return await self.get_tokens_for_events(event_ids, only_moneyline)
 
     async def subscribe_to_series(self, series_id: int, only_moneyline: bool = True) -> WebSocketClient:
         """
-        Subscribes to websocket based on series_id
+        Resolves a series to its tokens and returns a connected, subscribed WebSocketClient.
+
+        Args:
+            series_id (int): The Polymarket series ID.
+            only_moneyline (bool, optional): If True, only include moneyline markets.
+
+        Returns:
+            WebSocketClient: A connected client subscribed to the series' tokens.
+
+        Raises:
+            ValueError: If no tokens are found for the series.
         """
         tokens = await self.get_series_tokens(series_id, only_moneyline)
         if not tokens:
@@ -69,7 +108,15 @@ class MarketDataService:
                            interval_seconds: int = 300,
                            only_moneyline: bool = True) -> None:
         """
-        Background task to monitor changes in events for a series and update subscriptions.
+        Background task that polls for event-list changes in a series and re-subscribes.
+
+        Args:
+            series_id (int): The Polymarket series ID to watch.
+            ws_client (WebSocketClient): The client to update subscriptions on when tokens change.
+            message_buffer (MessageBuffer | None, optional): If provided, records series info/update
+                messages alongside the market data stream.
+            interval_seconds (int, optional): Polling interval in seconds.
+            only_moneyline (bool, optional): If True, only include moneyline markets.
         """
         logger.info(f"Starting watcher for series_id: {series_id}")
         known_event_ids = set()

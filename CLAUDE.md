@@ -49,3 +49,12 @@ Polymarket Gamma API ──▶ MarketDataService ──▶ WebSocketClient ─�
 **Config**: environment-variable driven, no config framework — `src/config.py` currently only reads `APP_ENV` (`dev` → `DEBUG` logging, else `INFO`). `S3_*` vars are read directly in `S3Storage.__init__` via `os.getenv`. See `.env.example` for the full list. The series to subscribe to is hardcoded as `series_id` in `main.py` (not yet an env var).
 
 **Logging**: single shared logger from `src/utils/logger.py` (`from src.utils.logger import logger`), configured once at import time based on `APP_ENV`.
+
+## Docstrings
+
+All modules, classes, and functions/methods under `src/` must have Google-style docstrings — `src/s3_storage.py` is the reference example. Keep them short and concise (no restating the signature). `main.py` is excluded.
+
+- Module: one-line summary at the top of the file.
+- Class: short summary; `Attributes:` block for public attributes.
+- Function/method: short summary; `Args:`, `Returns:`, `Raises:` sections only when applicable (skip `Returns:` for `None`, skip `Args:`/`Raises:` when there are none). Trivial one-line getters/dunder methods can stay a single summary line.
+- Private helpers (`_leading_underscore`) still get a short docstring, especially noting non-obvious preconditions (e.g. "assumes the lock is held").

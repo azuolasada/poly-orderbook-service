@@ -1,3 +1,5 @@
+"""Module for buffering and flushing market data messages to S3 storage."""
+
 import asyncio
 import json
 from datetime import datetime
@@ -10,9 +12,27 @@ from src.utils.logger import logger
 
 
 class MessageBuffer:
+    """
+    In-memory buffer that batches messages and flushes them as zstd-compressed JSONL to S3.
+
+    Attributes:
+        flush_interval_seconds (int): Max time between flushes, in seconds.
+        flush_count_threshold (int): Max buffered message count before flushing.
+        buffer (list[Any]): The currently buffered messages.
+        last_flush_time (datetime): Timestamp of the last successful flush.
+        s3_storage (S3Storage): The storage backend flushes are uploaded to.
+    """
+
     def __init__(self,
                  flush_interval_seconds: int = 60,
                  flush_count_threshold: int = 100) -> None:
+        """
+        Initializes the MessageBuffer and ensures the target S3 bucket exists.
+
+        Args:
+            flush_interval_seconds (int, optional): Max time between flushes, in seconds.
+            flush_count_threshold (int, optional): Max buffered message count before flushing.
+        """
         self.flush_interval_seconds = flush_interval_seconds
         self.flush_count_threshold = flush_count_threshold
         
@@ -26,7 +46,12 @@ class MessageBuffer:
         self._compressor = zstd.ZstdCompressor(level=3)
 
     async def add_message(self, message: Any) -> None:
-        """Adds a message to the buffer and checks if flush is needed."""
+        """
+        Adds a message to the buffer, flushing if a threshold is reached.
+
+        Args:
+            message (Any): The JSON-serializable message to buffer.
+        """
         async with self._lock:
             self.buffer.append(message)
             

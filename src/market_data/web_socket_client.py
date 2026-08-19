@@ -1,3 +1,5 @@
+"""Module for the Polymarket CLOB WebSocket client with auto-reconnect."""
+
 import asyncio
 import json
 from collections.abc import AsyncIterator
@@ -12,7 +14,21 @@ from src.utils.logger import logger
 
 
 class WebSocketClient:
+    """
+    An auto-reconnecting client for the Polymarket CLOB market-data WebSocket.
+
+    Attributes:
+        url (str): The WebSocket endpoint URL.
+        connection (ClientConnection | None): The active connection, if any.
+    """
+
     def __init__(self, url: str = "wss://ws-subscriptions-clob.polymarket.com/ws/market") -> None:
+        """
+        Initializes the WebSocketClient.
+
+        Args:
+            url (str, optional): The WebSocket endpoint URL.
+        """
         self.url = url
         self.connection: ClientConnection | None = None
         self._subscribed_assets: list[str] = []
@@ -25,16 +41,23 @@ class WebSocketClient:
         reraise=True
     )
     async def _connect_locked(self) -> ClientConnection:
+        """Connects to the WebSocket, retrying with backoff. Assumes the connection lock is held."""
         logger.info(f"Connecting to WebSocket at {self.url}")
         self.connection = await connect(self.url, ping_interval=20)
         logger.info("Successfully connected to WebSocket")
         return self.connection
 
     async def connect(self) -> ClientConnection:
+        """Connects to the WebSocket, retrying with backoff.
+
+        Returns:
+            ClientConnection: The established connection.
+        """
         async with self._connection_lock:
             return await self._connect_locked()
 
     async def disconnect(self) -> None:
+        """Closes the WebSocket connection, if one is open."""
         async with self._connection_lock:
             if self.connection:
                 logger.info("Disconnecting from WebSocket")
@@ -42,10 +65,24 @@ class WebSocketClient:
                 self.connection = None
 
     async def subscribe(self, asset_ids: list[str]) -> None:
+        """
+        Subscribes to market data for the given asset IDs, replacing any prior subscription.
+
+        Args:
+            asset_ids (list[str]): The CLOB token/asset IDs to subscribe to.
+        """
         async with self._connection_lock:
             await self._subscribe_locked(asset_ids)
 
     async def _subscribe_locked(self, asset_ids: list[str]) -> None:
+        """Sends the subscription message. Assumes the connection lock is held.
+
+        Args:
+            asset_ids (list[str]): The CLOB token/asset IDs to subscribe to.
+
+        Raises:
+            RuntimeError: If called before connect().
+        """
         if not self.connection:
             raise RuntimeError("WebSocket is not connected. Call connect() first.")
 
@@ -58,6 +95,12 @@ class WebSocketClient:
         await self.connection.send(json.dumps(subscription_msg))
 
     async def listen(self) -> AsyncIterator[Any]:
+        """
+        Yields decoded messages from the WebSocket, reconnecting and re-subscribing on drops.
+
+        Yields:
+            Any: The JSON-decoded message payload.
+        """
         while True:
             if not self.connection:
                 logger.warning("WebSocket connection is missing. Attempting to connect...")
@@ -90,6 +133,7 @@ class WebSocketClient:
                 raise
 
     async def __aenter__(self) -> WebSocketClient:
+        """Enters the async context manager, connecting and returning this client."""
         await self.connect()
         return self
 
@@ -99,8 +143,10 @@ class WebSocketClient:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        """Exits the async context manager, disconnecting the WebSocket."""
         await self.disconnect()
 
     @property
     def subscribed_assets(self) -> list[str]:
+        """list[str]: The asset IDs currently subscribed to."""
         return self._subscribed_assets
