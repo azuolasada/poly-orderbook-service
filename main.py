@@ -4,6 +4,7 @@ import signal
 from src.config import settings
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
+from src.utils.logger import logger
 
 
 async def main() -> None:
@@ -26,7 +27,7 @@ async def main() -> None:
     try:
         ws_client = await md_service.subscribe_to_series(series_id=series_id)
     except ValueError as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
         flush_task.cancel()
         await asyncio.gather(flush_task, return_exceptions=True)
         return
@@ -34,7 +35,7 @@ async def main() -> None:
     # Start watcher for series updates
     watcher_task = asyncio.create_task(md_service.watch_series(series_id, ws_client, message_buffer=buffer))
 
-    print("Connected and subscribed. Listening for events...")
+    logger.info("Connected and subscribed. Listening for events...")
     
     try:
         async for data in ws_client.listen():
@@ -46,9 +47,9 @@ async def main() -> None:
     except asyncio.CancelledError:
         pass
     except Exception as e:
-        print(f"Unexpected error in main loop: {e}")
+        logger.error(f"Unexpected error in main loop: {e}")
     finally:
-        print("Shutting down... flushing remaining messages.")
+        logger.info("Shutting down... flushing remaining messages.")
         watcher_task.cancel()
         await asyncio.gather(watcher_task, return_exceptions=True)
         await buffer.flush()
