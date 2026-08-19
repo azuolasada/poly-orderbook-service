@@ -1,5 +1,6 @@
 import asyncio
 import signal
+import sys
 
 from src.config import settings
 from src.market_data.market_data_service import MarketDataService
@@ -30,7 +31,7 @@ async def main() -> None:
         logger.error(f"Error: {e}")
         flush_task.cancel()
         await asyncio.gather(flush_task, return_exceptions=True)
-        return
+        sys.exit(1)
 
     # Start watcher for series updates
     watcher_task = asyncio.create_task(md_service.watch_series(series_id, ws_client, message_buffer=buffer))
@@ -48,6 +49,7 @@ async def main() -> None:
         pass
     except Exception as e:
         logger.error(f"Unexpected error in main loop: {e}")
+        sys.exit(1)
     finally:
         logger.info("Shutting down... flushing remaining messages.")
         watcher_task.cancel()
