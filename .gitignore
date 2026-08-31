@@ -1,6 +1,9 @@
 # Environment
 .env
 
+# Message buffer spill (undelivered batches pending retry)
+data/spill/
+
 # Python
 __pycache__/
 *.pyc

@@ -7,7 +7,7 @@ Streams live orderbook/market data from [Polymarket](https://polymarket.com) for
 1. `MarketDataService` looks up a Polymarket **series** (e.g. an ATP tennis series) via the Gamma REST API, resolves its events into markets, and extracts the CLOB token IDs for `moneyline` markets (configurable).
 2. It connects to Polymarket's CLOB WebSocket feed and subscribes to those tokens.
 3. A background watcher polls the series every 5 minutes for new/removed events and updates the WebSocket subscription accordingly.
-4. Incoming messages are batched in memory by `MessageBuffer` and flushed to S3 as gzip-free, zstd-compressed `.jsonl.zst` files — either when a message-count threshold or a time interval is reached.
+4. Incoming messages are batched in memory by `MessageBuffer` and flushed to S3 as gzip-free, zstd-compressed `.jsonl.zst` files — either when a message-count threshold or a time interval is reached. If a flush fails (e.g. S3 is unreachable), the batch is spilled to disk instead of staying in memory, and retried automatically once uploads succeed again.
 5. `S3Storage` handles the upload (and creates the bucket if it doesn't exist) via `boto3`, against any S3-compatible endpoint (AWS S3, MinIO, etc.).
 
 ```
