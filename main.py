@@ -5,6 +5,7 @@ import sys
 from src.config import settings
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
+from src.utils.heartbeat import run_heartbeat
 from src.utils.logger import logger
 
 
@@ -18,6 +19,9 @@ async def main() -> None:
     # Start periodic flush task
     flush_task = asyncio.create_task(buffer.start_periodic_flush())
 
+    # Start heartbeat task, probed by the Dockerfile HEALTHCHECK
+    heartbeat_task = asyncio.create_task(run_heartbeat())
+
     # Handle SIGTERM (docker stop) and SIGINT (Ctrl+C)
     main_task = asyncio.current_task()
     assert main_task is not None
@@ -30,7 +34,8 @@ async def main() -> None:
     except ValueError as e:
         logger.error(f"Error: {e}")
         flush_task.cancel()
-        await asyncio.gather(flush_task, return_exceptions=True)
+        heartbeat_task.cancel()
+        await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
         sys.exit(1)
 
     # Start watcher for series updates
@@ -56,7 +61,8 @@ async def main() -> None:
         await asyncio.gather(watcher_task, return_exceptions=True)
         await buffer.flush()
         flush_task.cancel()
-        await asyncio.gather(flush_task, return_exceptions=True)
+        heartbeat_task.cancel()
+        await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
         await ws_client.disconnect()
 
 if __name__ == "__main__":
