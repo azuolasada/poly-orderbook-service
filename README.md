@@ -39,8 +39,8 @@ All configuration is via environment variables (see `.env.example`):
 | `POLYMARKET_SERIES_ID` | Polymarket series ID to subscribe to. Required, no default. |
 | `S3_ENDPOINT_URL` | Endpoint of the S3-compatible service. Use `http://minio:9000` if the app runs inside docker-compose, or `http://localhost:9000` if running `main.py` directly on the host against the mapped MinIO port. |
 | `S3_BUCKET` | Bucket to write flushed message batches to. Created automatically if missing. |
-| `S3_ACCESS_KEY_ID` | Access key for the S3-compatible service. |
-| `S3_SECRET_ACCESS_KEY` | Secret key for the S3-compatible service. |
+| `S3_ACCESS_KEY_ID` | Access key for the S3-compatible service. Optional against real AWS S3 — omit to use boto3's default credential chain (e.g. an IAM role) instead. |
+| `S3_SECRET_ACCESS_KEY` | Secret key for the S3-compatible service. Optional, see `S3_ACCESS_KEY_ID`. |
 
 ## Running
 
