@@ -1,48 +1,66 @@
-"""Module for configuring and providing a logger for the application."""
+"""Structlog-based logging: pretty console output in dev, JSON lines in prod."""
 
 import logging
 import sys
+from typing import Literal
 
-from src.config import settings
+import structlog
+from structlog.typing import Processor
+
+# Third-party loggers that are too chatty below WARNING (e.g. websockets logs every frame at DEBUG).
+_NOISY_LOGGERS = ("botocore", "boto3", "s3transfer", "urllib3", "httpx", "httpcore", "websockets", "asyncio")
+
+logger: structlog.stdlib.BoundLogger = structlog.stdlib.get_logger("poly_orderbook")
 
 
-def setup_logger(name: str = "poly_orderbook",
-                 level: int = logging.INFO) -> logging.Logger:
-    """Configures and returns a logger instance.
+def configure_logging(env: Literal["dev", "prod"]) -> None:
+    """Configures structlog and the stdlib root logger. Call once at startup, before anything logs.
+
+    Both structlog calls and stdlib records from third-party libraries go through the same
+    renderer, so all output is consistently formatted: colored console in dev, JSON in prod.
 
     Args:
-        name (str): The name of the logger. Defaults to "poly_orderbook".
-        level (int): The logging level. Defaults to logging.INFO.
-
-    Returns:
-        logging.Logger: The configured logger instance.
+        env: Deployment environment. ``dev`` logs at DEBUG with a console renderer,
+            ``prod`` logs at INFO as one JSON object per line.
     """
-    logger = logging.getLogger(name)
-    
-    # If logger already has handlers, don't add more (prevents duplicate logs)
-    if logger.handlers:
-        return logger
+    is_dev = env == "dev"
 
-    logger.setLevel(level)
+    shared_processors: list[Processor] = [
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.PositionalArgumentsFormatter(),  # supports logger.info("x %s", y)
+        structlog.processors.TimeStamper(fmt="iso", utc=not is_dev),
+        structlog.processors.StackInfoRenderer(),
+    ]
 
-    # Create console handler and set level
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
-
-    # Create formatter
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+    structlog.configure(
+        processors=[*shared_processors, structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
     )
 
-    # Add formatter to handler
-    handler.setFormatter(formatter)
+    renderer: Processor
+    final_processors: list[Processor] = [structlog.stdlib.ProcessorFormatter.remove_processors_meta]
+    if is_dev:
+        renderer = structlog.dev.ConsoleRenderer()
+    else:
+        # Structured tracebacks, without frame locals (they could leak credentials or payloads).
+        final_processors.append(
+            structlog.processors.ExceptionRenderer(structlog.tracebacks.ExceptionDictTransformer(show_locals=False))
+        )
+        renderer = structlog.processors.JSONRenderer()
+    final_processors.append(renderer)
 
-    # Add handler to logger
-    logger.addHandler(handler)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(foreign_pre_chain=shared_processors, processors=final_processors)
+    )
 
-    return logger
+    root = logging.getLogger()
+    root.handlers = [handler]
+    root.setLevel(logging.DEBUG if is_dev else logging.INFO)
 
-# Create a default logger instance for the project
-log_level = logging.DEBUG if settings.APP_ENV == "dev" else logging.INFO
-logger = setup_logger(level=log_level)
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)

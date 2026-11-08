@@ -8,7 +8,7 @@ from src.config import settings
 from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 from src.utils.heartbeat import run_heartbeat
-from src.utils.logger import logger
+from src.utils.logger import configure_logging, logger
 
 
 async def main() -> None:
@@ -68,4 +68,5 @@ async def main() -> None:
         await ws_client.disconnect()
 
 if __name__ == "__main__":
+    configure_logging(settings.APP_ENV)
     uvloop.run(main())

@@ -10,6 +10,7 @@ dependencies = [
     "boto3>=1.43.42",
     "pydantic-settings>=2.15.0",
     "uvloop>=0.23.0",
+    "structlog>=26.1.0",
 ]
 
 [tool.pytest.ini_options]

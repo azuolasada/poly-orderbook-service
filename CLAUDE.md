@@ -48,7 +48,7 @@ Polymarket Gamma API ──▶ MarketDataService ──▶ WebSocketClient ─�
 
 **Config**: environment-variable driven, no config framework — `src/config.py` currently only reads `APP_ENV` (`dev` → `DEBUG` logging, else `INFO`). `S3_*` vars are read directly in `S3Storage.__init__` via `os.getenv`. See `.env.example` for the full list. The series to subscribe to is hardcoded as `series_id` in `main.py` (not yet an env var).
 
-**Logging**: single shared logger from `src/utils/logger.py` (`from src.utils.logger import logger`), configured once at import time based on `APP_ENV`.
+**Logging**: `structlog`, via a single shared logger from `src/utils/logger.py` (`from src.utils.logger import logger`). `main.py` calls `configure_logging(settings.APP_ENV)` once at startup: `dev` → colored console at DEBUG, `prod` → one JSON object per line at INFO. Stdlib records from third-party libraries go through the same renderer; noisy ones (`botocore`, `websockets`, `httpx`, …) are capped at WARNING. Prefer key-value calls (`logger.info("batch_flushed", count=n)`) for new log lines; existing f-string and `%s`-style calls still work.
 
 ## Docstrings
 
