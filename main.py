@@ -1,4 +1,5 @@
 import asyncio
+import uvloop
 import signal
 import sys
 
@@ -66,4 +67,4 @@ async def main() -> None:
         await ws_client.disconnect()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvloop.run(main())

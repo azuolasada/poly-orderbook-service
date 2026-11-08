@@ -41,4 +41,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import os,sys,time; p='/tmp/heartbeat'; sys.exit(0 if os.path.exists(p) and time.time() - os.path.getmtime(p) < 90 else 1)"
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["sh", "-c", "if [ \"$APP_ENV\" = dev ]; then exec python -X dev main.py; else exec python main.py; fi"]
