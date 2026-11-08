@@ -1,7 +1,8 @@
 import asyncio
-import uvloop
 import signal
 import sys
+
+import uvloop
 
 from src.config import settings
 from src.market_data.market_data_service import MarketDataService
