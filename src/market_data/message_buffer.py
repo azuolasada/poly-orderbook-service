@@ -31,11 +31,13 @@ class MessageBuffer:
         s3_storage (S3Storage): The storage backend flushes are uploaded to.
     """
 
-    def __init__(self,
-                 flush_interval_seconds: int = 60,
-                 flush_count_threshold: int = 100,
-                 spill_dir: str = "./data/spill",
-                 max_spill_bytes: int = 2 * 1024 * 1024 * 1024) -> None:
+    def __init__(
+        self,
+        flush_interval_seconds: int = 60,
+        flush_count_threshold: int = 100,
+        spill_dir: str = "./data/spill",
+        max_spill_bytes: int = 2 * 1024 * 1024 * 1024,
+    ) -> None:
         """
         Initializes the MessageBuffer and ensures the target S3 bucket exists.
 

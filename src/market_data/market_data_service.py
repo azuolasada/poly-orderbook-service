@@ -63,9 +63,7 @@ class MarketDataService:
                 club_tokens.extend(token_ids)
         return club_tokens
 
-    async def get_series_tokens(self,
-                               series_id: int,
-                               only_moneyline: bool = True) -> list[str]:
+    async def get_series_tokens(self, series_id: int, only_moneyline: bool = True) -> list[str]:
         """
         Fetches CLOB token IDs for all events belonging to a series.
 
@@ -104,12 +102,14 @@ class MarketDataService:
         await ws_client.subscribe(tokens)
         return ws_client
 
-    async def watch_series(self,
-                           series_id: int,
-                           ws_client: WebSocketClient,
-                           message_buffer: MessageBuffer | None = None,
-                           interval_seconds: int = 300,
-                           only_moneyline: bool = True) -> None:
+    async def watch_series(
+        self,
+        series_id: int,
+        ws_client: WebSocketClient,
+        message_buffer: MessageBuffer | None = None,
+        interval_seconds: int = 300,
+        only_moneyline: bool = True,
+    ) -> None:
         """
         Background task that polls for event-list changes in a series and re-subscribes.
 
@@ -146,7 +146,7 @@ class MarketDataService:
                         f"New token count: {len(new_tokens)} Updating subscriptions."
                     )
                     await ws_client.subscribe(new_tokens)
-                    
+
                     if message_buffer:
                         await message_buffer.add_message({"type": "series_update", "data": series})
 

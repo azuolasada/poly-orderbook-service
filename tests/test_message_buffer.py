@@ -40,14 +40,15 @@ async def test_buffer_count_threshold(mock_s3, tmp_path):
 
     # Verify content of upload
     args, kwargs = mock_s3.upload_bytes.call_args
-    compressed_data = kwargs.get('data') or args[0]
+    compressed_data = kwargs.get("data") or args[0]
 
     dctx = zstd.ZstdDecompressor()
-    content = dctx.decompress(compressed_data).decode('utf-8')
+    content = dctx.decompress(compressed_data).decode("utf-8")
     lines = content.splitlines()
 
     assert len(lines) == 5
     assert json.loads(lines[0]) == {"id": 0}
+
 
 @pytest.mark.asyncio
 async def test_buffer_manual_flush(mock_s3, tmp_path):
@@ -58,6 +59,7 @@ async def test_buffer_manual_flush(mock_s3, tmp_path):
     await buffer.flush()
     assert len(buffer.buffer) == 0
     assert mock_s3.upload_bytes.call_count == 1
+
 
 @pytest.mark.asyncio
 async def test_buffer_time_threshold(mock_s3, tmp_path):
@@ -137,11 +139,11 @@ async def test_s3_upload_retries():
     mock_client = MagicMock()
 
     # Simulate 2 failures then 1 success
-    error_response = {'Error': {'Code': '500', 'Message': 'Internal Server Error'}}
+    error_response = {"Error": {"Code": "500", "Message": "Internal Server Error"}}
     mock_client.put_object.side_effect = [
-        ClientError(error_response, 'PutObject'),
-        ClientError(error_response, 'PutObject'),
-        {'ResponseMetadata': {'HTTPStatusCode': 200}}
+        ClientError(error_response, "PutObject"),
+        ClientError(error_response, "PutObject"),
+        {"ResponseMetadata": {"HTTPStatusCode": 200}},
     ]
 
     with patch("boto3.client", return_value=mock_client):

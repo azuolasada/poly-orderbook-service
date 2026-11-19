@@ -38,7 +38,7 @@ class WebSocketClient:
         stop=stop_after_attempt(10),
         wait=wait_exponential(multiplier=1, min=2, max=60),
         retry=retry_if_exception_type((WebSocketException, ConnectionRefusedError, OSError)),
-        reraise=True
+        reraise=True,
     )
     async def _connect_locked(self) -> ClientConnection:
         """Connects to the WebSocket, retrying with backoff. Assumes the connection lock is held."""

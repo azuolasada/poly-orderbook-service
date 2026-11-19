@@ -45,7 +45,7 @@ async def main() -> None:
     watcher_task = asyncio.create_task(md_service.watch_series(series_id, ws_client, message_buffer=buffer))
 
     logger.info("Connected and subscribed. Listening for events...")
-    
+
     try:
         async for data in ws_client.listen():
             events = data if isinstance(data, list) else [data]
@@ -68,6 +68,7 @@ async def main() -> None:
         await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
         await md_service.close()
         await ws_client.disconnect()
+
 
 if __name__ == "__main__":
     configure_logging(settings.APP_ENV)

@@ -44,7 +44,7 @@ class ApiClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception(_is_retryable),
-        reraise=True
+        reraise=True,
     )
     async def _get(self, endpoint: str) -> dict[str, Any]:
         """
@@ -74,7 +74,7 @@ class ApiClient:
         except httpx.RequestError as e:
             logger.error(f"Request error occurred while fetching {endpoint}: {e}")
             raise
-        
+
         return response.json()
 
     async def get_series_by_id(self, series_id: int) -> dict[str, Any]:

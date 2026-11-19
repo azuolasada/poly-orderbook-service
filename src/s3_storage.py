@@ -72,7 +72,7 @@ class S3Storage:
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=2, max=30),
         retry=retry_if_exception_type((ClientError, BotoCoreError)),
-        reraise=True
+        reraise=True,
     )
     async def upload_bytes(self, data: bytes, key: str) -> None:
         """
