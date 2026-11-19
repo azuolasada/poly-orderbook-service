@@ -30,8 +30,10 @@ cp .env.example .env   # fill in real values, see below
 For local development, also run:
 
 ```bash
-make setup             # uv sync + install git hooks (prek)
+make setup             # uv sync + install git hooks (prek) + create .env if missing
 ```
+
+Run `make` (or `make help`) to list all targets.
 
 This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix` and `mypy` run on every commit. `pytest` runs on every push. Together they match CI — see [Testing](#testing).
 
@@ -55,7 +57,7 @@ The app is intended to be run **only via Docker** — there is no supported way 
 ### With local MinIO (dev)
 
 ```bash
-docker compose --profile dev up --build
+make start-dev         # docker compose --profile dev up --build
 ```
 
 This starts the service alongside a MinIO instance (S3-compatible storage) with a web console at `http://localhost:9001` (default credentials: `admin` / `admin123`, see `docker-compose.yaml`). Use `S3_ENDPOINT_URL=http://minio:9000` in `.env` for this mode.
@@ -63,27 +65,31 @@ This starts the service alongside a MinIO instance (S3-compatible storage) with 
 ### Against external S3-compatible storage
 
 ```bash
-docker compose up --build
+make start             # docker compose up --build
 ```
 
 Point `S3_ENDPOINT_URL` (and credentials) at your real S3-compatible endpoint in `.env`.
+
+Use `make stop` to stop the containers and `make logs` to follow their logs.
 
 ## Testing
 
 Checks run locally (outside Docker), against the `uv`-managed environment created by `make setup`:
 
 ```bash
-make check             # ruff + mypy
-make check-full        # ruff + mypy + pytest (same as CI)
+make lint              # ruff + mypy
+make fmt               # ruff check --fix
+make test              # pytest
+make check             # ruff + mypy + pytest (same as CI)
 ```
 
-Run `make check-full` before pushing — CI (`.github/workflows/ci.yml`) runs the same three checks on every push/PR to `master`.
+Run `make check` before pushing — CI (`.github/workflows/ci.yml`) runs the same three checks on every push/PR to `master`.
 
 ## Project layout
 
 ```
 main.py                              # entrypoint: wires up the service, buffer, and event loop
-Makefile                             # dev shortcuts: setup, check, check-full
+Makefile                             # dev shortcuts (run `make` to list targets)
 src/
   config.py                          # env-driven app config (APP_ENV)
   s3_storage.py                      # S3-compatible upload/bucket management

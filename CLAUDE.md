@@ -10,24 +10,32 @@ An asyncio service that streams live orderbook/market data from Polymarket for a
 
 Dependency management is via `uv`. `pytest`/`ruff`/`mypy` live in the `dev` dependency group (excluded from the production Docker image via `--no-dev`).
 
+Common tasks are wrapped in the `Makefile` (`make` with no args lists targets):
+
 ```bash
-uv sync                          # install all deps (prod + dev) into .venv
-
-uv run pytest tests/ -q          # run the full test suite
-uv run pytest tests/test_api_client.py -q          # single test file
-uv run pytest tests/test_api_client.py::test_api_client_retries_on_429 -q   # single test
-
-uv run ruff check .              # lint
-uv run ruff check --fix .        # lint, auto-fixing what's fixable
-
-uv run mypy src main.py          # type check
+make setup                       # uv sync --locked + install prek git hooks + create .env from .env.example
+make lint                        # ruff + mypy
+make fmt                         # ruff check --fix
+make test                        # pytest
+make check                       # lint + test (same as CI)
+make start / make start-dev      # docker compose up --build (real S3 / local MinIO via --profile dev)
+make stop / make logs / make clean
 ```
 
-All three (ruff, mypy, pytest) run in GitHub Actions on every push/PR to `master` (`.github/workflows/ci.yml`) — run them locally before pushing.
+Single tests / files go through `uv` directly:
+
+```bash
+uv run pytest tests/test_api_client.py -q
+uv run pytest tests/test_api_client.py::test_api_client_retries_on_429 -q
+```
+
+Makefile recipes must be indented with tabs, not spaces.
+
+All three (ruff, mypy, pytest) run in GitHub Actions on every push/PR to `master` (`.github/workflows/ci.yml`) — run `make check` locally before pushing. The prek hooks (`.pre-commit-config.yaml`) also run ruff + mypy on commit and pytest on push.
 
 Tests use `respx` to mock HTTP calls and mock the WebSocket connection object directly (see `tests/test_web_socket_client.py`); no live network calls or real S3/MinIO are needed to run the suite. `pytest-asyncio` is in `auto` mode (`pyproject.toml`), so async test functions don't need an explicit `@pytest.mark.asyncio` decorator to run correctly, though the existing tests include it anyway for clarity.
 
-**Running the app itself is Docker-only** — there is no supported way to run `main.py` directly on the host (see README's "Running" section for `docker compose --profile dev up --build` against local MinIO, or plain `docker compose up --build` against real S3).
+**Running the app itself is Docker-only** — there is no supported way to run `main.py` directly on the host (`make start-dev` against local MinIO, or `make start` against real S3; see README's "Running" section).
 
 ## Architecture
 
