@@ -1,7 +1,6 @@
 """Module for the Polymarket Gamma REST API client."""
 
 import time
-from types import TracebackType
 from typing import Any
 
 import httpx
@@ -35,19 +34,6 @@ class ApiClient:
         """
         self.base_url = base_url.rstrip("/") + "/"
         self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
-
-    async def __aenter__(self) -> ApiClient:
-        """Enters the async context manager, returning this client."""
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Exits the async context manager, closing the underlying HTTP client."""
-        await self.close()
 
     async def close(self) -> None:
         """Closes the underlying HTTP client."""
