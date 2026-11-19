@@ -9,9 +9,13 @@ from src.market_data.market_data_service import MarketDataService
 from src.market_data.message_buffer import MessageBuffer
 from src.utils.heartbeat import run_heartbeat
 from src.utils.logger import configure_logging, logger
+from src.utils.memory_monitor import monitor_memory
 
 
 async def main() -> None:
+    # Start memory monitoring
+    mem_monitor_task = asyncio.create_task(monitor_memory())
+
     md_service = MarketDataService()
     series_id = settings.POLYMARKET_SERIES_ID
 
@@ -35,9 +39,10 @@ async def main() -> None:
         ws_client = await md_service.subscribe_to_series(series_id=series_id)
     except ValueError as e:
         logger.error(f"Error: {e}")
+        mem_monitor_task.cancel()
         flush_task.cancel()
         heartbeat_task.cancel()
-        await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
+        await asyncio.gather(mem_monitor_task, flush_task, heartbeat_task, return_exceptions=True)
         await md_service.close()
         sys.exit(1)
 
@@ -65,7 +70,8 @@ async def main() -> None:
         await buffer.flush()
         flush_task.cancel()
         heartbeat_task.cancel()
-        await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
+        mem_monitor_task.cancel()
+        await asyncio.gather(mem_monitor_task, flush_task, heartbeat_task, return_exceptions=True)
         await md_service.close()
         await ws_client.disconnect()
 
