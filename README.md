@@ -19,7 +19,7 @@ Polymarket Gamma API ──▶ MarketDataService ──▶ WebSocketClient ─�
 ## Requirements
 
 - Docker + Docker Compose — the app is intended to run in Docker only (see [Running](#running))
-- Python >= 3.14 and [uv](https://docs.astral.sh/uv/) — only needed for local development (running tests, linting, etc.), not for running the app itself
+- Python >= 3.14, [uv](https://docs.astral.sh/uv/) and `make` — only needed for local development (running tests, linting, etc.), not for running the app itself
 
 ## Setup
 
@@ -27,7 +27,13 @@ Polymarket Gamma API ──▶ MarketDataService ──▶ WebSocketClient ─�
 cp .env.example .env   # fill in real values, see below
 ```
 
-For local development (tests, etc.) also run `uv sync` — see [Testing](#testing).
+For local development, also run:
+
+```bash
+make setup             # uv sync + install git hooks (prek)
+```
+
+This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix` runs on every commit, and `mypy` runs on every push. Tests are not run by the hooks — see [Testing](#testing).
 
 ## Configuration
 
@@ -35,9 +41,9 @@ All configuration is via environment variables (see `.env.example`):
 
 | Variable | Description |
 |---|---|
-| `APP_ENV` | `dev` enables `DEBUG` logging; anything else defaults to `INFO`. |
+| `APP_ENV` | `dev` (colored console logs at `DEBUG`) or `prod` (JSON logs at `INFO`). Defaults to `prod`. |
 | `POLYMARKET_SERIES_ID` | Polymarket series ID to subscribe to. Required, no default. |
-| `S3_ENDPOINT_URL` | Endpoint of the S3-compatible service. Use `http://minio:9000` if the app runs inside docker-compose, or `http://localhost:9000` if running `main.py` directly on the host against the mapped MinIO port. |
+| `S3_ENDPOINT_URL` | Endpoint of the S3-compatible service. Use `http://minio:9000` with the local MinIO from `docker compose --profile dev`. |
 | `S3_BUCKET` | Bucket to write flushed message batches to. Created automatically if missing. |
 | `S3_ACCESS_KEY_ID` | Access key for the S3-compatible service. Optional against real AWS S3 — omit to use boto3's default credential chain (e.g. an IAM role) instead. |
 | `S3_SECRET_ACCESS_KEY` | Secret key for the S3-compatible service. Optional, see `S3_ACCESS_KEY_ID`. |
@@ -64,17 +70,20 @@ Point `S3_ENDPOINT_URL` (and credentials) at your real S3-compatible endpoint in
 
 ## Testing
 
-Tests run locally (outside Docker), against a `uv`-managed environment:
+Checks run locally (outside Docker), against the `uv`-managed environment created by `make setup`:
 
 ```bash
-uv sync
-uv run pytest
+make check             # ruff + mypy
+make check-full        # ruff + mypy + pytest (same as CI)
 ```
+
+Run `make check-full` before pushing — CI (`.github/workflows/ci.yml`) runs the same three checks on every push/PR to `master`.
 
 ## Project layout
 
 ```
 main.py                              # entrypoint: wires up the service, buffer, and event loop
+Makefile                             # dev shortcuts: setup, check, check-full
 src/
   config.py                          # env-driven app config (APP_ENV)
   s3_storage.py                      # S3-compatible upload/bucket management
