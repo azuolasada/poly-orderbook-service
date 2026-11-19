@@ -1,6 +1,6 @@
 """Structlog-based logging: pretty console output in dev, JSON lines in prod."""
 
-import logging
+import logging, warnings
 import sys
 from typing import Literal
 
@@ -23,7 +23,12 @@ def configure_logging(env: Literal["dev", "prod"]) -> None:
         env: Deployment environment. ``dev`` logs at DEBUG with a console renderer,
             ``prod`` logs at INFO as one JSON object per line.
     """
+    logging.captureWarnings(True)
+
     is_dev = env == "dev"
+
+    if is_dev:
+        warnings.simplefilter("default")
 
     shared_processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,
