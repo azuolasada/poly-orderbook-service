@@ -14,7 +14,7 @@ Common tasks are wrapped in the `Makefile` (`make` with no args lists targets):
 
 ```bash
 make setup                       # uv sync --locked + install prek git hooks + create .env from .env.example
-make lint                        # ruff + mypy
+make lint                        # ruff check + ruff format --check + mypy
 make fmt                         # ruff check --fix + ruff format
 make test                        # pytest
 make check                       # lint + test (same as CI)
@@ -31,7 +31,7 @@ uv run pytest tests/test_api_client.py::test_api_client_retries_on_429 -q
 
 Makefile recipes must be indented with tabs, not spaces.
 
-All three (ruff, mypy, pytest) run in GitHub Actions on every push/PR to `master` (`.github/workflows/ci.yml`) — run `make check` locally before pushing. The prek hooks (`.pre-commit-config.yaml`) also run ruff + mypy on commit and pytest on push.
+Ruff lint, ruff format check, mypy and pytest all run in GitHub Actions on every push/PR to `master` (`.github/workflows/ci.yml`) — run `make check` locally before pushing. The prek hooks (`.pre-commit-config.yaml`) also run `ruff check --fix`, `ruff format` and mypy on commit, and pytest on push.
 
 Tests use `respx` to mock HTTP calls and mock the WebSocket connection object directly (see `tests/test_web_socket_client.py`); no live network calls or real S3/MinIO are needed to run the suite. `pytest-asyncio` is in `auto` mode (`pyproject.toml`), so async test functions don't need an explicit `@pytest.mark.asyncio` decorator to run correctly, though the existing tests include it anyway for clarity.
 

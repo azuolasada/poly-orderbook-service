@@ -9,8 +9,9 @@ setup:  ## Install deps, git hooks, and create .env
 	uv run prek install
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
 
-lint:  ## Ruff + mypy
+lint:  ## Ruff (lint + format check) + mypy
 	uv run ruff check .
+	uv run ruff format --check .
 	uv run mypy src main.py
 
 fmt:  ## Auto-fix lint issues and format code

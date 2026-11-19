@@ -35,7 +35,7 @@ make setup             # uv sync + install git hooks (prek) + create .env if mis
 
 Run `make` (or `make help`) to list all targets.
 
-This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix` and `mypy` run on every commit. `pytest` runs on every push. Together they match CI — see [Testing](#testing).
+This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix`, `ruff format` and `mypy` run on every commit. `pytest` runs on every push. Together they match CI — see [Testing](#testing).
 
 ## Configuration
 
@@ -77,13 +77,13 @@ Use `make stop` to stop the containers and `make logs` to follow their logs.
 Checks run locally (outside Docker), against the `uv`-managed environment created by `make setup`:
 
 ```bash
-make lint              # ruff + mypy
+make lint              # ruff check + ruff format --check + mypy
 make fmt               # ruff check --fix + ruff format
 make test              # pytest
-make check             # ruff + mypy + pytest (same as CI)
+make check             # lint + pytest (same as CI)
 ```
 
-Run `make check` before pushing — CI (`.github/workflows/ci.yml`) runs the same three checks on every push/PR to `master`.
+Run `make check` before pushing — CI (`.github/workflows/ci.yml`) runs the same checks (ruff lint, ruff format check, mypy, pytest) on every push/PR to `master`.
 
 ## Project layout
 
