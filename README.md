@@ -33,7 +33,7 @@ For local development, also run:
 make setup             # uv sync + install git hooks (prek)
 ```
 
-This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix` runs on every commit, and `mypy` runs on every push. Tests are not run by the hooks — see [Testing](#testing).
+This installs [prek](https://github.com/j178/prek) git hooks from `.pre-commit-config.yaml`: `ruff check --fix` and `mypy` run on every commit. `pytest` runs on every push. Together they match CI — see [Testing](#testing).
 
 ## Configuration
 

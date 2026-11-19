@@ -16,4 +16,12 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+        stages: [pre-commit]
+
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false
         stages: [pre-push]
