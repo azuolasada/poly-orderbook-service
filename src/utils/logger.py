@@ -1,7 +1,8 @@
 """Structlog-based logging: pretty console output in dev, JSON lines in prod."""
 
-import logging, warnings
+import logging
 import sys
+import warnings
 from typing import Literal
 
 import structlog
