@@ -22,6 +22,9 @@ class MarketDataService:
         self.api_client = ApiClient()
         logger.info("Initializing MarketDataService")
 
+    async def close(self):
+        await self.api_client.close()
+
     async def get_tokens_for_events(self, event_ids: list[str], only_moneyline: bool = True) -> list[str]:
         """
         Fetches CLOB token IDs for a list of event IDs.

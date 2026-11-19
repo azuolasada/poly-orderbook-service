@@ -37,6 +37,7 @@ class ApiClient:
 
     async def close(self) -> None:
         """Closes the underlying HTTP client."""
+        logger.info(f"Closing HTTP client ({self.base_url})")
         await self._client.aclose()
 
     @retry(

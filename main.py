@@ -38,6 +38,7 @@ async def main() -> None:
         flush_task.cancel()
         heartbeat_task.cancel()
         await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
+        await md_service.close()
         sys.exit(1)
 
     # Start watcher for series updates
@@ -65,6 +66,7 @@ async def main() -> None:
         flush_task.cancel()
         heartbeat_task.cancel()
         await asyncio.gather(flush_task, heartbeat_task, return_exceptions=True)
+        await md_service.close()
         await ws_client.disconnect()
 
 if __name__ == "__main__":
