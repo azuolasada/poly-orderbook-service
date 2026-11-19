@@ -78,7 +78,7 @@ Checks run locally (outside Docker), against the `uv`-managed environment create
 
 ```bash
 make lint              # ruff + mypy
-make fmt               # ruff check --fix
+make fmt               # ruff check --fix + ruff format
 make test              # pytest
 make check             # ruff + mypy + pytest (same as CI)
 ```

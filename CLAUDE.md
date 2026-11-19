@@ -15,7 +15,7 @@ Common tasks are wrapped in the `Makefile` (`make` with no args lists targets):
 ```bash
 make setup                       # uv sync --locked + install prek git hooks + create .env from .env.example
 make lint                        # ruff + mypy
-make fmt                         # ruff check --fix
+make fmt                         # ruff check --fix + ruff format
 make test                        # pytest
 make check                       # lint + test (same as CI)
 make start / make start-dev      # docker compose up --build (real S3 / local MinIO via --profile dev)

@@ -13,8 +13,9 @@ lint:  ## Ruff + mypy
 	uv run ruff check .
 	uv run mypy src main.py
 
-fmt:  ## Auto-fix lint issues
+fmt:  ## Auto-fix lint issues and format code
 	uv run ruff check --fix .
+	uv run ruff format .
 
 test:  ## Run tests
 	uv run pytest tests/ -q
